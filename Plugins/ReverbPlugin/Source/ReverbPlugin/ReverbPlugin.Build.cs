@@ -26,6 +26,10 @@ public class ReverbPlugin : ModuleRules
 			new string[]
 			{
 				"Core",
+				"CoreUObject", 
+				"Engine", 
+				"InputCore",
+                "AudioPlatformConfiguration"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
