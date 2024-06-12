@@ -8,18 +8,24 @@
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class REVERBPLUGIN_API UReverbPluginComponent : public UActorComponent {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    UReverbPluginComponent();
+	UReverbPluginComponent();
 
-protected:
-    virtual void BeginPlay() override;
-
-public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
     USoundBase* SoundToPlay;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+    USoundAttenuation* AttenuationSettings;
+
     UFUNCTION(BlueprintCallable, Category = "Audio")
     void PlayAudio();
+
+protected:
+	virtual void BeginPlay() override;
+
+private:
+	UAudioComponent* AudioComponent;
+
 };
