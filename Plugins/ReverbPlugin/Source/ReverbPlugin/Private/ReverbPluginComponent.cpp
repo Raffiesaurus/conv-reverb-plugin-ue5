@@ -19,14 +19,27 @@ void UReverbPluginComponent::BeginPlay() {
 	}
 }
 
+USoundBase* UReverbPluginComponent::GetSelectedRIR() const {
+	FString Path = UIRsPathMapping::GetIRPath(RoomSelection);
+	return LoadSoundFromPath(Path);
+}
+
+USoundBase* UReverbPluginComponent::LoadSoundFromPath(const FString& Path) const {
+	if(Path.IsEmpty()) return nullptr;
+
+	return Cast<USoundBase>(StaticLoadObject(USoundBase::StaticClass(), nullptr, *Path));
+}
+
+
 void UReverbPluginComponent::PlayAudio() {
-	if(SoundToPlay) {
+	USoundBase* SelectedRIR = GetSelectedRIR();
+	if(SelectedRIR) {
 		UE_LOG(LogTemp, Warning, TEXT("PlayAudio called. Sound file exists."));
 
 		FVector ActorLocation = GetOwner()->GetActorLocation();
 		UE_LOG(LogTemp, Warning, TEXT("Actor Location: %s"), *ActorLocation.ToString());
 
-		AudioComponent->SetSound(SoundToPlay);
+		AudioComponent->SetSound(SelectedRIR);
 		AudioComponent->SetWorldLocation(ActorLocation);
 
 		if(!AttenuationSettings) {
@@ -37,12 +50,21 @@ void UReverbPluginComponent::PlayAudio() {
 
 			// Configure the default attenuation settings
 			FSoundAttenuationSettings& AttenuationSettingsRef = DefaultAttenuation->Attenuation;
-			AttenuationSettingsRef.bSpatialize = true;
+
+			// Attenuation Settings
 			AttenuationSettingsRef.bAttenuate = true;
 			AttenuationSettingsRef.AttenuationShape = EAttenuationShape::Sphere;
 			AttenuationSettingsRef.AttenuationShapeExtents = FVector(400.0f);
 			AttenuationSettingsRef.FalloffDistance = 2000.0f;
+
+			// Spatialization Settings
+			AttenuationSettingsRef.bSpatialize = true;
+			AttenuationSettingsRef.SpatializationAlgorithm = ESoundSpatializationAlgorithm::SPATIALIZATION_HRTF;
+
+			// Focus Settings
 			AttenuationSettingsRef.bEnableListenerFocus = true;
+
+			// Occlusion Settings
 			AttenuationSettingsRef.bEnableOcclusion = true;
 			AttenuationSettingsRef.bUseComplexCollisionForOcclusion = true;
 
@@ -52,10 +74,8 @@ void UReverbPluginComponent::PlayAudio() {
 			AudioComponent->AttenuationSettings = DefaultAttenuation;
 		} else {
 			UE_LOG(LogTemp, Warning, TEXT("Using provided attenuation settings."));
-
 			AudioComponent->AttenuationSettings = AttenuationSettings;
 		}
-
 		AudioComponent->Play();
 	} else {
 		UE_LOG(LogTemp, Warning, TEXT("No sound file provided."));

@@ -4,6 +4,8 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Sound/SoundBase.h"
+#include "IRsPathMapping.h"
+#include "ReverbPluginRoomEnums.h"
 #include "ReverbPluginComponent.generated.h"
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
@@ -13,14 +15,17 @@ class REVERBPLUGIN_API UReverbPluginComponent : public UActorComponent {
 public:
 	UReverbPluginComponent();
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
-    USoundBase* SoundToPlay;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundBase* SoundToPlay;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
-    USoundAttenuation* AttenuationSettings;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundAttenuation* AttenuationSettings;
 
-    UFUNCTION(BlueprintCallable, Category = "Audio")
-    void PlayAudio();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	ERoomSelection RoomSelection;
+
+	UFUNCTION(BlueprintCallable, Category = "Audio")
+	void PlayAudio();
 
 protected:
 	virtual void BeginPlay() override;
@@ -28,4 +33,7 @@ protected:
 private:
 	UAudioComponent* AudioComponent;
 
+	USoundBase* GetSelectedRIR() const;
+
+	USoundBase* LoadSoundFromPath(const FString& Path) const;
 };

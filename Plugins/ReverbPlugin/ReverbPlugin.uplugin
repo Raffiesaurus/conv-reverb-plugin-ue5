@@ -20,5 +20,12 @@
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}
-	]
+	],
+    	"CanContainContent": true,
+    	"Content": [
+        	{
+            		"Path": "/ReverbPlugin/RIRs",
+            		"MountPoint": "/Game/ReverbPlugin/RIRs"
+        	}
+    	]
 }
