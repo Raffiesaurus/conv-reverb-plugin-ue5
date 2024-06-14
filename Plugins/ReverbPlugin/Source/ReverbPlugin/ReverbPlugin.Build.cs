@@ -29,7 +29,8 @@ public class ReverbPlugin : ModuleRules
 				"CoreUObject", 
 				"Engine", 
 				"InputCore",
-                "AudioPlatformConfiguration"
+                "AudioPlatformConfiguration",
+                "Synthesis"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -42,6 +43,7 @@ public class ReverbPlugin : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"AudioMixer",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

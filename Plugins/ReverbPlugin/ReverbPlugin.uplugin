@@ -18,14 +18,23 @@
 		{
 			"Name": "ReverbPlugin",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+      		"AdditionalDependencies": [
+        		"Synthesis",
+        		"SynthesisCore"
+      		]
 		}
 	],
-    	"CanContainContent": true,
-    	"Content": [
-        	{
-            		"Path": "/ReverbPlugin/RIRs",
-            		"MountPoint": "/Game/ReverbPlugin/RIRs"
-        	}
-    	]
+    "Content": [
+        {
+            	"Path": "/ReverbPlugin/RIRs",
+            	"MountPoint": "/Game/ReverbPlugin/RIRs"
+        }
+    ],
+	"Plugins": [
+		{
+			"Name": "Synthesis",
+			"Enabled": true
+		}
+	]
 }
