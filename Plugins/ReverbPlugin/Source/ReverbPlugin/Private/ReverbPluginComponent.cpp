@@ -5,13 +5,13 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Engine.h"
 #include "Sound/SoundAttenuation.h"
+#include "EffectConvolutionReverb.h"
 
 UReverbPluginComponent::UReverbPluginComponent() {
 	PrimaryComponentTick.bCanEverTick = false;
 	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
 	AudioComponent->bAutoActivate = false;
-	ReverbSubmix = nullptr;
-	ReverbEffectPreset = nullptr;
+	ConvReverbEffectPreset = nullptr;
 }
 
 void UReverbPluginComponent::BeginPlay() {
@@ -20,114 +20,62 @@ void UReverbPluginComponent::BeginPlay() {
 	if (AudioComponent && GetOwner()) {
 		AudioComponent->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	}
-	InitializeReverbSubmix();
 }
 
-USoundBase* UReverbPluginComponent::GetSelectedRIR() const {
+UAudioImpulseResponse* UReverbPluginComponent::GetSelectedRIR() const {
 	if (UseCustomIR && CustomIR) {
 		return CustomIR;
 	}
 	FString Path = UIRsPathMapping::GetIRPath(RoomSelection);
-	return LoadSoundFromPath(Path);
+	return LoadIRFromPath(Path);
 }
 
-USoundBase* UReverbPluginComponent::LoadSoundFromPath(const FString& Path) const {
+UAudioImpulseResponse* UReverbPluginComponent::LoadIRFromPath(const FString& Path) const {
 	if (Path.IsEmpty()) return nullptr;
 
-	//USoundBase* LoadedSound = Cast<USoundBase>(StaticLoadObject(USoundBase::StaticClass(), nullptr, *Path));
-	UAudioImpulseResponse* IR = LoadObject<UAudioImpulseResponse>(NULL, *Path);
+	UAudioImpulseResponse* IR = Cast<UAudioImpulseResponse>(StaticLoadObject(UAudioImpulseResponse::StaticClass(), nullptr, *Path));
 
 	UE_LOG(LogTemp, Warning, TEXT("Trying to load sound from path: %s"), *Path);
 	if (!IR) {
 		UE_LOG(LogTemp, Warning, TEXT("Failed to load sound from path: %s"), *Path);
 	}
-
-	USoundBase* LoadedSound = NULL;
-	return LoadedSound;
-}
-
-void UReverbPluginComponent::InitializeReverbSubmix() {
-	if (ReverbSubmix) return;
-
-	ReverbSubmix = NewObject<USoundSubmix>(this, TEXT("ReverbSubmix"));
-	ReverbEffectPreset = NewObject<USubmixEffectReverbPreset>(ReverbSubmix);
-
-	// Configure default reverb settings here
-	FSubmixEffectReverbSettings ReverbSettings;
-	ReverbSettings.DecayTime = 0.5f;
-	ReverbSettings.Density = 0.85f;
-	ReverbSettings.Diffusion = 0.9f;
-	ReverbEffectPreset->SetSettings(ReverbSettings);
-
-	ReverbSubmix->SubmixEffectChain.Add(ReverbEffectPreset);
-
-	UE_LOG(LogTemp, Warning, TEXT("Reverb submix and effect preset initialized."));
-}
-
-void UReverbPluginComponent::ApplyReverbEffect(USoundBase* IR) {
-	if (!ReverbEffectPreset || !IR) {
-		UE_LOG(LogTemp, Warning, TEXT("Invalid reverb effect preset or IR."));
-		return;
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("Successfully loaded IR from path: %s"), *Path);
 	}
 
-	// Use the provided IR in reverb settings
-	FSubmixEffectReverbSettings ReverbSettings;
-	// Assuming you want to apply the IR in some custom way. Adjust this as needed.
-	ReverbSettings.DecayTime = 0.5f;
-	ReverbSettings.Density = 0.85f;
-	ReverbSettings.Diffusion = 0.9f;
-	ReverbEffectPreset->SetSettings(ReverbSettings);
-	//UAudioImpulseResponse
-	//ConvReverbEffectPreset->SetImpulseResponse();
-
-	UE_LOG(LogTemp, Warning, TEXT("Reverb effect applied with IR."));
+	return IR;
 }
-
 
 void UReverbPluginComponent::PlayAudio() {
-	// Load the selected IR from file
-	USoundBase* SelectedRIR = GetSelectedRIR();
-	if (!SelectedRIR)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Error: Invalid IR."));
-		return;
-	}
+
+	UAudioImpulseResponse* SelectedRIR = GetSelectedRIR();
 
 	UE_LOG(LogTemp, Warning, TEXT("PlayAudio called. Sound file exists."));
 
-	// Get actor location to set audio component's location
 	FVector ActorLocation = GetOwner()->GetActorLocation();
 	UE_LOG(LogTemp, Warning, TEXT("Actor Location: %s"), *ActorLocation.ToString());
 
-	// Set the main sound to play on the audio component
 	AudioComponent->SetSound(SoundToPlay);
 
-	// Set the world location of the audio component
 	AudioComponent->SetWorldLocation(ActorLocation);
 
-	// If no attenuation settings provided, create default settings
 	if (!AttenuationSettings)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Creating default attenuation settings."));
 
-		// Default attenuation settings if none are provided
 		USoundAttenuation* DefaultAttenuation = NewObject<USoundAttenuation>(this, USoundAttenuation::StaticClass());
 		FSoundAttenuationSettings& AttenuationSettingsRef = DefaultAttenuation->Attenuation;
 
-		// Set default attenuation settings
 		AttenuationSettingsRef.bAttenuate = true;
 		AttenuationSettingsRef.AttenuationShape = EAttenuationShape::Sphere;
 		AttenuationSettingsRef.AttenuationShapeExtents = FVector(400.0f);
 		AttenuationSettingsRef.FalloffDistance = 2000.0f;
 
-		// Spatialization Settings
 		AttenuationSettingsRef.bSpatialize = true;
 		AttenuationSettingsRef.SpatializationAlgorithm = ESoundSpatializationAlgorithm::SPATIALIZATION_HRTF;
 
-		// Focus Settings
 		AttenuationSettingsRef.bEnableListenerFocus = true;
 
-		// Occlusion Settings
 		AttenuationSettingsRef.bEnableOcclusion = true;
 		AttenuationSettingsRef.bUseComplexCollisionForOcclusion = true;
 
@@ -140,11 +88,34 @@ void UReverbPluginComponent::PlayAudio() {
 		AudioComponent->AttenuationSettings = AttenuationSettings;
 	}
 
-	// Apply the reverb effect with the loaded IR
-	ApplyReverbEffect(SelectedRIR);
+	USourceEffectConvolutionReverbPreset* IrToApply = NewObject<USourceEffectConvolutionReverbPreset>();
+	if (UseCustomIR) {
+		IrToApply->SetImpulseResponse(CustomIR);
+	}
+	else {
+		IrToApply->SetImpulseResponse(SelectedRIR);
+	}
 
-	// Play the audio through the audio component
+	IrToApply->Settings.WetVolumeDb = 0.0f;
+	IrToApply->Settings.DryVolumeDb = -96.0f;
+	IrToApply->Settings.bBypass = false;
+	IrToApply->BlockSize = ESubmixEffectConvolutionReverbBlockSize::BlockSize1024;
+	IrToApply->bEnableHardwareAcceleration = true;
+
+	UE_LOG(LogTemp, Warning, TEXT("Created USourceEffectConvolutionReverbPreset."));
+
+	USoundEffectSourcePresetChain* SoundEffectToApply = NewObject<USoundEffectSourcePresetChain>();
+	FSourceEffectChainEntry* ApplyChain = new FSourceEffectChainEntry();
+	ApplyChain->Preset = IrToApply;
+	UE_LOG(LogTemp, Warning, TEXT("Created FSourceEffectChainEntry."));
+	SoundEffectToApply->Chain.Add(*ApplyChain);
+	UE_LOG(LogTemp, Warning, TEXT("Created USoundEffectSourcePresetChain."));
+
+	AudioComponent->SetSourceEffectChain(SoundEffectToApply);
+	UE_LOG(LogTemp, Warning, TEXT("Set SourceEffectChain."));
+
 	AudioComponent->Play();
+	UE_LOG(LogTemp, Warning, TEXT("Played."));
 }
 
 void UReverbPluginComponent::SetNewRoomSelection(ERoomSelection NewRoom) {

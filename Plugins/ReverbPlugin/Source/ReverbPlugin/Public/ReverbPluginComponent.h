@@ -10,6 +10,9 @@
 #include "ReverbPluginRoomEnums.h"
 #include "Sound/SoundSubmix.h"
 #include "ConvolutionReverb.h"
+#include "Sound/SoundEffectSource.h"
+#include "EffectConvolutionReverb.h"
+#include "SourceEffects/SourceEffectConvolutionReverb.h"
 #include "ReverbPluginComponent.generated.h"
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
@@ -32,7 +35,7 @@ public:
 	bool UseCustomIR;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio", meta = (EditCondition = "UseCustomIR", EditConditionHides))
-	USoundBase* CustomIR;
+	UAudioImpulseResponse* CustomIR;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio", meta = (EditCondition = "!UseCustomIR", EditConditionHides))
 	ERoomSelection RoomSelection;
@@ -51,13 +54,11 @@ private:
 
 	USoundSubmix* ReverbSubmix;
 
-	USubmixEffectReverbPreset* ReverbEffectPreset;
-
 	USubmixEffectConvolutionReverbPreset* ConvReverbEffectPreset;
 
-	USoundBase* GetSelectedRIR() const;
-	USoundBase* LoadSoundFromPath(const FString& Path) const;
+	UAudioImpulseResponse* GetSelectedRIR() const;
+	UAudioImpulseResponse* LoadIRFromPath(const FString& Path) const;
 
 	void InitializeReverbSubmix();
-	void ApplyReverbEffect(USoundBase* IR);
+	void ApplyReverbEffect(UAudioImpulseResponse* IR);
 };
