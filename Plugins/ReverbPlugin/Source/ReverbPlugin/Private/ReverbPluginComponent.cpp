@@ -11,7 +11,7 @@ UReverbPluginComponent::UReverbPluginComponent() {
 	PrimaryComponentTick.bCanEverTick = false;
 	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
 	AudioComponent->bAutoActivate = false;
-	ConvReverbEffectPreset = nullptr;
+	DefaultConvReverbEffectPreset = nullptr;
 }
 
 void UReverbPluginComponent::BeginPlay() {
@@ -38,8 +38,7 @@ UAudioImpulseResponse* UReverbPluginComponent::LoadIRFromPath(const FString& Pat
 	UE_LOG(LogTemp, Warning, TEXT("Trying to load sound from path: %s"), *Path);
 	if (!IR) {
 		UE_LOG(LogTemp, Warning, TEXT("Failed to load sound from path: %s"), *Path);
-	}
-	else {
+	} else {
 		UE_LOG(LogTemp, Warning, TEXT("Successfully loaded IR from path: %s"), *Path);
 	}
 
@@ -59,40 +58,36 @@ void UReverbPluginComponent::PlayAudio() {
 
 	AudioComponent->SetWorldLocation(ActorLocation);
 
-	if (!AttenuationSettings)
-	{
+	if (UseCustomAttenuationSettings) {
+		UE_LOG(LogTemp, Warning, TEXT("Using provided attenuation settings."));
+		AudioComponent->AttenuationSettings = AttenuationSettings;
+	} else {
 		UE_LOG(LogTemp, Warning, TEXT("Creating default attenuation settings."));
 
-		USoundAttenuation* DefaultAttenuation = NewObject<USoundAttenuation>(this, USoundAttenuation::StaticClass());
-		FSoundAttenuationSettings& AttenuationSettingsRef = DefaultAttenuation->Attenuation;
+		DefaultAttenuation = NewObject<USoundAttenuation>();
+		FSoundAttenuationSettings& DefaultAttenuationSettingsRef = DefaultAttenuation->Attenuation;
 
-		AttenuationSettingsRef.bAttenuate = true;
-		AttenuationSettingsRef.AttenuationShape = EAttenuationShape::Sphere;
-		AttenuationSettingsRef.AttenuationShapeExtents = FVector(400.0f);
-		AttenuationSettingsRef.FalloffDistance = 2000.0f;
+		DefaultAttenuationSettingsRef.bAttenuate = true;
+		DefaultAttenuationSettingsRef.AttenuationShape = EAttenuationShape::Sphere;
+		DefaultAttenuationSettingsRef.AttenuationShapeExtents = FVector(400.0f);
+		DefaultAttenuationSettingsRef.FalloffDistance = 2000.0f;
 
-		AttenuationSettingsRef.bSpatialize = true;
-		AttenuationSettingsRef.SpatializationAlgorithm = ESoundSpatializationAlgorithm::SPATIALIZATION_HRTF;
+		DefaultAttenuationSettingsRef.bSpatialize = true;
+		DefaultAttenuationSettingsRef.SpatializationAlgorithm = ESoundSpatializationAlgorithm::SPATIALIZATION_Default;
 
-		AttenuationSettingsRef.bEnableListenerFocus = true;
+		DefaultAttenuationSettingsRef.bEnableListenerFocus = true;
 
-		AttenuationSettingsRef.bEnableOcclusion = true;
-		AttenuationSettingsRef.bUseComplexCollisionForOcclusion = true;
+		DefaultAttenuationSettingsRef.bEnableOcclusion = true;
+		DefaultAttenuationSettingsRef.bUseComplexCollisionForOcclusion = true;
 
 		// Assign default attenuation settings to audio component
 		AudioComponent->AttenuationSettings = DefaultAttenuation;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Using provided attenuation settings."));
-		AudioComponent->AttenuationSettings = AttenuationSettings;
 	}
 
 	USourceEffectConvolutionReverbPreset* IrToApply = NewObject<USourceEffectConvolutionReverbPreset>();
 	if (UseCustomIR) {
 		IrToApply->SetImpulseResponse(CustomIR);
-	}
-	else {
+	} else {
 		IrToApply->SetImpulseResponse(SelectedRIR);
 	}
 
@@ -104,14 +99,14 @@ void UReverbPluginComponent::PlayAudio() {
 
 	UE_LOG(LogTemp, Warning, TEXT("Created USourceEffectConvolutionReverbPreset."));
 
-	USoundEffectSourcePresetChain* SoundEffectToApply = NewObject<USoundEffectSourcePresetChain>();
-	FSourceEffectChainEntry* ApplyChain = new FSourceEffectChainEntry();
-	ApplyChain->Preset = IrToApply;
+	DefaultSoundEffectToApply = NewObject<USoundEffectSourcePresetChain>();
+	FSourceEffectChainEntry* DefaultEffectChain = new FSourceEffectChainEntry();
+	DefaultEffectChain->Preset = IrToApply;
 	UE_LOG(LogTemp, Warning, TEXT("Created FSourceEffectChainEntry."));
-	SoundEffectToApply->Chain.Add(*ApplyChain);
+	DefaultSoundEffectToApply->Chain.Add(*DefaultEffectChain);
 	UE_LOG(LogTemp, Warning, TEXT("Created USoundEffectSourcePresetChain."));
 
-	AudioComponent->SetSourceEffectChain(SoundEffectToApply);
+	AudioComponent->SetSourceEffectChain(DefaultSoundEffectToApply);
 	UE_LOG(LogTemp, Warning, TEXT("Set SourceEffectChain."));
 
 	AudioComponent->Play();

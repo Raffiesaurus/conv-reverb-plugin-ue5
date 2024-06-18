@@ -52,13 +52,15 @@ protected:
 private:
 	UAudioComponent* AudioComponent;
 
-	USoundSubmix* ReverbSubmix;
+	USoundSubmix* DefaultReverbSubmix;
 
-	USubmixEffectConvolutionReverbPreset* ConvReverbEffectPreset;
+	USubmixEffectConvolutionReverbPreset* DefaultConvReverbEffectPreset;
+
+	USoundAttenuation* DefaultAttenuation;
+
+	USoundEffectSourcePresetChain* DefaultSoundEffectToApply;
 
 	UAudioImpulseResponse* GetSelectedRIR() const;
 	UAudioImpulseResponse* LoadIRFromPath(const FString& Path) const;
 
-	void InitializeReverbSubmix();
-	void ApplyReverbEffect(UAudioImpulseResponse* IR);
 };
