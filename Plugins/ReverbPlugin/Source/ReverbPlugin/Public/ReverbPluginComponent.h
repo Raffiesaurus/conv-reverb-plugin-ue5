@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Components/AudioComponent.h"
 #include "Sound/SoundBase.h"
 #include "IRsPathMapping.h"
 #include "SubmixEffects/AudioMixerSubmixEffectReverb.h"
