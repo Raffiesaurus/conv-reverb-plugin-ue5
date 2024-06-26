@@ -9,6 +9,9 @@
 #include "SubmixEffects/SubmixEffectConvolutionReverb.h"
 #include "ReverbPluginRoomEnums.h"
 #include "Sound/SoundSubmix.h"
+#include "Sound/SoundWave.h"
+#include "AudioDecompress.h"
+#include "Logging/LogMacros.h"
 #include "ConvolutionReverb.h"
 #include "Sound/SoundEffectSource.h"
 #include "EffectConvolutionReverb.h"
@@ -16,7 +19,7 @@
 #include "ReverbPluginComponent.generated.h"
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class REVERBPLUGIN_API UReverbPluginComponent : public UActorComponent {
+class REVERBPLUGIN_API UReverbPluginComponent : public USceneComponent {
 	GENERATED_BODY()
 
 public:

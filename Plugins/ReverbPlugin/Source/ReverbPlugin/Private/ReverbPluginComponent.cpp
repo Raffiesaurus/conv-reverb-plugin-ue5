@@ -26,6 +26,23 @@ UAudioImpulseResponse* UReverbPluginComponent::GetSelectedRIR() const {
 	if (UseCustomIR && CustomIR) {
 		return CustomIR;
 	}
+
+	FString RoomToLoad;
+	switch (RoomSelection) {
+	case ERoomSelection::RSE_Arena:
+	case ERoomSelection::RSE_CarPark:
+		RoomToLoad = "Car Park";
+	case ERoomSelection::RSE_Cavern:
+		RoomToLoad = "Cavern";
+	case ERoomSelection::RSE_Cinema:
+		RoomToLoad = "Cinema";
+	case ERoomSelection::RSE_Hillside:
+		RoomToLoad = "Hillside";
+	default:
+		RoomToLoad = "Uhoh";
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Trying to load sound from path: %s"), *RoomToLoad);
+
 	FString Path = UIRsPathMapping::GetIRPath(RoomSelection);
 	return LoadIRFromPath(Path);
 }
@@ -54,6 +71,42 @@ void UReverbPluginComponent::PlayAudio() {
 	FVector ActorLocation = GetOwner()->GetActorLocation();
 	UE_LOG(LogTemp, Warning, TEXT("Actor Location: %s"), *ActorLocation.ToString());
 
+	/*USoundWave* SoundWave = Cast<USoundWave>(SoundToPlay);
+
+	if (SoundWave->GetResourceSizeBytes(EResourceSizeMode::EstimatedTotal) > 0) {
+		int32 SoundFileSize = SoundWave->GetResourceSizeBytes(EResourceSizeMode::EstimatedTotal);
+		UE_LOG(LogTemp, Log, TEXT("Sound file size: %d bytes"), SoundFileSize);
+	}*/
+
+	// 
+
+	//// Accessing the raw audio data
+	//if (SoundWave->GetResourceSizeBytes(EResourceSizeMode::EstimatedTotal) > 0) {
+	//	FByteBulkData& BulkData = SoundWave->GetResourceData();
+	//	uint8* RawWaveData = (uint8*)BulkData->Lock(LOCK_READ_ONLY);
+
+	//	int32 DataSize = BulkData->GetBulkDataSize();
+	//	TArray<uint8> RawDataArray;
+	//	RawDataArray.Append(RawWaveData, DataSize);
+
+	//	BulkData->Unlock();
+
+	//	// You now have the raw audio data in RawDataArray
+	//	UE_LOG(LogTemp, Log, TEXT("Retrieved raw audio data of size: %d"), DataSize);
+
+	//	// Optionally, decode the raw audio data to PCM format
+	//	ICompressedAudioInfo* Worker = nullptr;
+	//	Worker->ReadCompressedData(RawDataArray.GetData(), DataSize, SoundWave->GetCompressionQuality());
+
+	//	int16* PCMData = Worker->GetStreamingSoundWave()->GetResourceSize();
+	//	int32 PCMDataSize = Worker->GetSourceBufferSize();
+
+	//	// You now have the PCM data in PCMData
+	//	UE_LOG(LogTemp, Log, TEXT("PCM data size: %d"), PCMDataSize);
+
+	//	// Process PCMData as needed (e.g., to generate a waveform)
+	//}
+
 	AudioComponent->SetSound(SoundToPlay);
 
 	AudioComponent->SetWorldLocation(ActorLocation);
@@ -73,7 +126,7 @@ void UReverbPluginComponent::PlayAudio() {
 		DefaultAttenuationSettingsRef.FalloffDistance = 2000.0f;
 
 		DefaultAttenuationSettingsRef.bSpatialize = true;
-		DefaultAttenuationSettingsRef.SpatializationAlgorithm = ESoundSpatializationAlgorithm::SPATIALIZATION_Default;
+		DefaultAttenuationSettingsRef.SpatializationAlgorithm = ESoundSpatializationAlgorithm::SPATIALIZATION_HRTF;
 
 		DefaultAttenuationSettingsRef.bEnableListenerFocus = true;
 
@@ -86,8 +139,10 @@ void UReverbPluginComponent::PlayAudio() {
 
 	USourceEffectConvolutionReverbPreset* IrToApply = NewObject<USourceEffectConvolutionReverbPreset>();
 	if (UseCustomIR) {
+		UE_LOG(LogTemp, Warning, TEXT("Using custom."));
 		IrToApply->SetImpulseResponse(CustomIR);
 	} else {
+		UE_LOG(LogTemp, Warning, TEXT("Using selected."));
 		IrToApply->SetImpulseResponse(SelectedRIR);
 	}
 
