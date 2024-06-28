@@ -28,6 +28,7 @@ public class ReverbPlugin : ModuleRules {
                 "Engine",
                 "InputCore",
                 "AudioPlatformConfiguration",
+                "ProceduralMeshComponent",
                 "Synthesis"
 				// ... add other public dependencies that you statically link with here ...
 			}

@@ -8,10 +8,14 @@
 #include "EffectConvolutionReverb.h"
 
 UReverbPluginComponent::UReverbPluginComponent() {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
 	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
-	AudioComponent->bAutoActivate = false;
-	DefaultConvReverbEffectPreset = nullptr;
+	AudioComponent->bAutoActivate = true;
+	AudioComponent->SetupAttachment(this);
+
+	// Create and attach a ProceduralMeshComponent for detection
+	DetectionMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("DetectionMesh"));
+	DetectionMesh->SetupAttachment(this);
 }
 
 void UReverbPluginComponent::BeginPlay() {
@@ -20,6 +24,13 @@ void UReverbPluginComponent::BeginPlay() {
 	if (AudioComponent && GetOwner()) {
 		AudioComponent->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	}
+
+	TakeMeshShape();
+}
+
+void UReverbPluginComponent::TakeMeshShape() {
+	UpdateVolumeBounds();
+	PlayAudio();
 }
 
 UAudioImpulseResponse* UReverbPluginComponent::GetSelectedRIR() const {
@@ -62,54 +73,80 @@ UAudioImpulseResponse* UReverbPluginComponent::LoadIRFromPath(const FString& Pat
 	return IR;
 }
 
-void UReverbPluginComponent::PlayAudio() {
+void UReverbPluginComponent::UpdateVolumeBounds() {
+	GenerateMeshFromEnvironment();
+}
 
+void UReverbPluginComponent::GenerateMeshFromEnvironment() {
+	FVector ActorLocation = GetOwner()->GetActorLocation();
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(GetOwner());
+
+	TArray<FOverlapResult> OverlapResults;
+	GetWorld()->OverlapMultiByChannel(
+		OverlapResults,
+		ActorLocation,
+		FQuat::Identity,
+		ECC_WorldStatic,
+		FCollisionShape::MakeSphere(1000.0f),  // Adjust the sphere radius as needed
+		QueryParams
+	);
+
+	TArray<FVector> Vertices;
+	TArray<int32> Triangles;
+	TArray<FVector> Normals;
+	TArray<FVector2D> UV0;
+	TArray<FProcMeshTangent> Tangents;
+
+	for (const FOverlapResult& Result : OverlapResults) {
+		if (Result.GetActor() && Result.GetActor() != GetOwner()) {
+			FBox ActorBox = Result.GetActor()->GetComponentsBoundingBox();
+			FVector ActorMin = ActorBox.Min;
+			FVector ActorMax = ActorBox.Max;
+
+			// Generate vertices and triangles for a simple box shape as an example
+			// This can be adapted to create more complex shapes
+			Vertices.Add(ActorMin);
+			Vertices.Add(FVector(ActorMax.X, ActorMin.Y, ActorMin.Z));
+			Vertices.Add(FVector(ActorMax.X, ActorMax.Y, ActorMin.Z));
+			Vertices.Add(FVector(ActorMin.X, ActorMax.Y, ActorMin.Z));
+
+			Vertices.Add(FVector(ActorMin.X, ActorMin.Y, ActorMax.Z));
+			Vertices.Add(FVector(ActorMax.X, ActorMin.Y, ActorMax.Z));
+			Vertices.Add(ActorMax);
+			Vertices.Add(FVector(ActorMin.X, ActorMax.Y, ActorMax.Z));
+
+			Triangles.Append({ 0, 1, 2, 0, 2, 3 });
+			Triangles.Append({ 4, 6, 5, 4, 7, 6 });
+			Triangles.Append({ 0, 4, 5, 0, 5, 1 });
+			Triangles.Append({ 1, 5, 6, 1, 6, 2 });
+			Triangles.Append({ 2, 6, 7, 2, 7, 3 });
+			Triangles.Append({ 3, 7, 4, 3, 4, 0 });
+
+			// Normals, UVs, and Tangents can be calculated based on the vertices and triangles
+		}
+	}
+
+	DetectionMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UV0, TArray<FLinearColor>(), Tangents, true);
+
+	// Optionally, draw the mesh for debugging
+	DrawDebugBox(GetWorld(), DetectionMesh->GetComponentLocation(), DetectionMesh->Bounds.BoxExtent, FColor::Red, false, 10.0f);
+}
+
+void UReverbPluginComponent::PlayAudio() {
+	if (SoundToPlay == NULL) {
+		return;
+	}
 	UAudioImpulseResponse* SelectedRIR = GetSelectedRIR();
 
 	UE_LOG(LogTemp, Warning, TEXT("PlayAudio called. Sound file exists."));
 
+	AudioComponent->SetVolumeMultiplier(VolumeMultiplier);
+	AudioComponent->SetPitchMultiplier(PitchMultiplier);
+
 	FVector ActorLocation = GetOwner()->GetActorLocation();
-	UE_LOG(LogTemp, Warning, TEXT("Actor Location: %s"), *ActorLocation.ToString());
-
-	/*USoundWave* SoundWave = Cast<USoundWave>(SoundToPlay);
-
-	if (SoundWave->GetResourceSizeBytes(EResourceSizeMode::EstimatedTotal) > 0) {
-		int32 SoundFileSize = SoundWave->GetResourceSizeBytes(EResourceSizeMode::EstimatedTotal);
-		UE_LOG(LogTemp, Log, TEXT("Sound file size: %d bytes"), SoundFileSize);
-	}*/
-
-	// 
-
-	//// Accessing the raw audio data
-	//if (SoundWave->GetResourceSizeBytes(EResourceSizeMode::EstimatedTotal) > 0) {
-	//	FByteBulkData& BulkData = SoundWave->GetResourceData();
-	//	uint8* RawWaveData = (uint8*)BulkData->Lock(LOCK_READ_ONLY);
-
-	//	int32 DataSize = BulkData->GetBulkDataSize();
-	//	TArray<uint8> RawDataArray;
-	//	RawDataArray.Append(RawWaveData, DataSize);
-
-	//	BulkData->Unlock();
-
-	//	// You now have the raw audio data in RawDataArray
-	//	UE_LOG(LogTemp, Log, TEXT("Retrieved raw audio data of size: %d"), DataSize);
-
-	//	// Optionally, decode the raw audio data to PCM format
-	//	ICompressedAudioInfo* Worker = nullptr;
-	//	Worker->ReadCompressedData(RawDataArray.GetData(), DataSize, SoundWave->GetCompressionQuality());
-
-	//	int16* PCMData = Worker->GetStreamingSoundWave()->GetResourceSize();
-	//	int32 PCMDataSize = Worker->GetSourceBufferSize();
-
-	//	// You now have the PCM data in PCMData
-	//	UE_LOG(LogTemp, Log, TEXT("PCM data size: %d"), PCMDataSize);
-
-	//	// Process PCMData as needed (e.g., to generate a waveform)
-	//}
-
-	AudioComponent->SetSound(SoundToPlay);
-
 	AudioComponent->SetWorldLocation(ActorLocation);
+	AudioComponent->SetSound(SoundToPlay);
 
 	if (UseCustomAttenuationSettings) {
 		UE_LOG(LogTemp, Warning, TEXT("Using provided attenuation settings."));
@@ -170,5 +207,9 @@ void UReverbPluginComponent::PlayAudio() {
 
 void UReverbPluginComponent::SetNewRoomSelection(ERoomSelection NewRoom) {
 	RoomSelection = NewRoom;
-	PlayAudio();
+}
+
+void UReverbPluginComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	UpdateVolumeBounds();
 }
