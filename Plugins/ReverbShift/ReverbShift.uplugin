@@ -3,13 +3,13 @@
 	"Version": 1,
 	"VersionName": "1.0",
 	"FriendlyName": "ReverbShift",
-	"Description": "",
+	"Description": "Provides real time environment detecting reverb modifications along with spatial audio implementation.",
 	"Category": "Other",
 	"CreatedBy": "Raahul",
-	"CreatedByURL": "",
-	"DocsURL": "",
+	"CreatedByURL": "https://raffiesaurus.com",
+	"DocsURL": "https://raffiesaurus.com/reverb-doc",
 	"MarketplaceURL": "",
-	"SupportURL": "",
+	"SupportURL": "https://raffiesaurus.com",
 	"CanContainContent": true,
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,
@@ -34,6 +34,10 @@
 		},
 		{
 			"Name": "ProceduralMeshComponent",
+			"Enabled": true
+		},
+		{
+			"Name": "Metasound",
 			"Enabled": true
 		}
 	]

@@ -4,12 +4,12 @@
 #include "Enums.generated.h"
 
 UENUM(BlueprintType)
-enum class ERoomSelection : uint8 {
-	RSE_None				UMETA(DisplayName = "None"),
-	RSE_Cinema				UMETA(DisplayName = "Cinema"),
-	RSE_CarPark				UMETA(DisplayName = "Car Park"),
-	RSE_Arena				UMETA(DisplayName = "Arena"),
-	RSE_Hillside			UMETA(DisplayName = "Hillside"),
-	RSE_Cavern				UMETA(DisplayName = "Cavern"),
-	RSE_Stone_Quarry		UMETA(DisplayName = "Stone Quarry"),
+enum class EReverbSelection : uint8 {
+	RS_None				UMETA(DisplayName = "None"),
+	RS_Cinema			UMETA(DisplayName = "Cinema"),
+	RS_CarPark			UMETA(DisplayName = "Car Park"),
+	RS_Arena			UMETA(DisplayName = "Arena"),
+	RS_Hillside			UMETA(DisplayName = "Hillside"),
+	RS_Cavern			UMETA(DisplayName = "Cavern"),
+	RS_Stone_Quarry		UMETA(DisplayName = "Stone Quarry"),
 };
