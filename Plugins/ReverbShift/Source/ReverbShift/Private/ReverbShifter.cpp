@@ -1,3 +1,4 @@
+// Copyright Raahul Sankaranarayanan, 2024. All Rights Reserved.
 #include "ReverbShifter.h"
 
 UReverbShifterComponent::UReverbShifterComponent() {}

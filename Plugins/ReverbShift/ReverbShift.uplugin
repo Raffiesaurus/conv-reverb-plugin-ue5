@@ -7,8 +7,10 @@
 	"Category": "Other",
 	"CreatedBy": "Raahul",
 	"CreatedByURL": "https://raffiesaurus.com",
-	"DocsURL": "https://raffiesaurus.com/reverb-doc",
-	"MarketplaceURL": "",
+	"DocsURL": "https://raffiesaurus.com/reverb-doc.html",
+	"MarketplaceURL": "com.epicgames.launcher://ue/Fab/product/c00892de-c94b-4ef6-a85f-64452dc5cc59",
+	"FabURL": "com.epicgames.launcher://ue/Fab/product/c00892de-c94b-4ef6-a85f-64452dc5cc59",
+	"EngineVersion": "5.3.2",
 	"SupportURL": "https://raffiesaurus.com",
 	"CanContainContent": true,
 	"IsBetaVersion": false,
@@ -18,7 +20,11 @@
 		{
 			"Name": "ReverbShift",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
 		}
 	],
 	"Content": [

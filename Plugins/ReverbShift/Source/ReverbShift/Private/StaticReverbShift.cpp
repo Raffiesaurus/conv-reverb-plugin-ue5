@@ -1,3 +1,4 @@
+// Copyright Raahul Sankaranarayanan, 2024. All Rights Reserved.
 #include "StaticReverbShift.h"
 
 UStaticReverbShiftComponent::UStaticReverbShiftComponent() {

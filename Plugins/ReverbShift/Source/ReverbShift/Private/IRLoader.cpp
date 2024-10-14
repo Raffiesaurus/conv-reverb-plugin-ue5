@@ -1,3 +1,4 @@
+// Copyright Raahul Sankaranarayanan, 2024. All Rights Reserved.
 #include "IRLoader.h"
 
 UAudioImpulseResponse* UIRLoader::GetIR(EReverbSelection ReverbSelection, FString owner) {

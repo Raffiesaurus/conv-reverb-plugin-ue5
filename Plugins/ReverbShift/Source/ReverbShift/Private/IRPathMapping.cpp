@@ -1,3 +1,4 @@
+// Copyright Raahul Sankaranarayanan, 2024. All Rights Reserved.
 #include "IRPathMapping.h"
 
 FString UIRsPathMapping::GetIRPath(EReverbSelection ReverbSelection) {

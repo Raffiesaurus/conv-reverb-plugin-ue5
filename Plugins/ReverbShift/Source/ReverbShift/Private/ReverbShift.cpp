@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Raahul Sankaranarayanan, 2024. All Rights Reserved.
 
 #include "ReverbShift.h"
 
