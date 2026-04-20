@@ -1,4 +1,4 @@
-# ReverbShift — Convolution Reverb Plugin for UE5
+# ReverbShift - Convolution Reverb Plugin for UE5
 
 A real-time **convolution reverb** plugin built natively for Unreal Engine 5. Implements FFT-based audio convolution using Impulse Response (IR) files to simulate physically accurate acoustic spaces, exposed as a native **MetaSounds node**.
 
